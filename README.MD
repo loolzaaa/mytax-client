@@ -9,12 +9,20 @@
 
 ## Установка
 
+### Maven
+
 ```xml
 <dependency>
   <groupId>ru.loolzaaa.nalog.mytax</groupId>
   <artifactId>mytax-client</artifactId>
   <version>0.0.1</version>
 </dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'ru.loolzaaa.nalog.mytax:mytax-client:0.0.1'
 ```
 
 ## Использование
