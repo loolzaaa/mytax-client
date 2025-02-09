@@ -15,25 +15,51 @@
 <dependency>
   <groupId>ru.loolzaaa.nalog.mytax</groupId>
   <artifactId>mytax-client</artifactId>
-  <version>0.0.2</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'ru.loolzaaa.nalog.mytax:mytax-client:0.0.2'
+implementation 'ru.loolzaaa.nalog.mytax:mytax-client:0.1.0'
 ```
 
 ## Использование
 
-При создании экземпляра клиента можно задать префикс для идентификации
-устройства/приложения, с которого будут осуществляться обращения к API.
+### Конфигурация
+
+Перед использованием клиент можно, но не обязательно, сконфигурировать.  
+Значения конфигурационных свойств по умолчанию можно увидеть
+[здесь](src/main/java/ru/loolzaaa/nalog/mytax/client/MyTaxClientConfig.java).
+
+#### Префикс
+
+Префикс необходим для идентификации устройства/приложения,
+с которого будут осуществляться обращения к API.
 Если такой необходимости нет, то префикс можно не задавать.
 Примеры генерации идентификаторов:
 
 - С префиксом `test_`: `test_dfSD36BsFs9dGh2B`
 - Без префикса: `hsnG5Hd8fdh7uc4HHd3Nv`
+
+#### Путь до точки доступа к API
+
+Задает базовый URL, который будет использоваться для всех
+запросов к API.
+
+#### Временная сдвиг
+
+Используется при формировании чека. Необходимо задать значение,
+которое удовлетворяет методу `ZoneOffset#of(String)`. Доступные
+варианты можно найти в исходниках указанного класса.
+
+#### Именование заголовка с адресом вызова
+
+Содержит наименование заголовка, значение которого указывает
+на URL вызова текущего API.
+
+---
 
 Перед инициализацией клиента необходимо задать ИНН и пароль,
 сохранив из в безопасном месте. В примерах ниже будут использованы
@@ -47,6 +73,7 @@ implementation 'ru.loolzaaa.nalog.mytax:mytax-client:0.0.2'
 
 ```java
 import ru.loolzaaa.nalog.mytax.client.MyTaxClient;
+import ru.loolzaaa.nalog.mytax.client.MyTaxClientConfig;
 import ru.loolzaaa.nalog.mytax.client.dto.AuthenticationDTO;
 import ru.loolzaaa.nalog.mytax.client.pojo.Receipt;
 import ru.loolzaaa.nalog.mytax.client.pojo.Service;
@@ -59,8 +86,12 @@ public class MyTaxClientTest {
         final String username = System.getenv("MYTAX_INN"); // ИНН
         final String password = System.getenv("MYTAX_PASS"); // Пароль
 
-        //MyTaxClient myTaxClient = new MyTaxClient(); // Без префикса
-        MyTaxClient myTaxClient = new MyTaxClient("test_"); // С префиксом
+        MyTaxClientConfig clientConfig = new MyTaxClientConfig();
+        clientConfig.setPrefix("test_");
+        clientConfig.setZoneOffset("+5");
+
+        //MyTaxClient myTaxClient = new MyTaxClient(); // Конфигурация по умолчанию
+        MyTaxClient myTaxClient = new MyTaxClient(clientConfig);
 
         // В результате инициализации возвращается объект с данными
         // о пользователе
