@@ -7,7 +7,7 @@
 
   <groupId>ru.loolzaaa.nalog.mytax</groupId>
   <artifactId>mytax-client</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 
   <name>MyTax API client</name>
   <description>Клиент для использования API сервиса "Мой налог"</description>
