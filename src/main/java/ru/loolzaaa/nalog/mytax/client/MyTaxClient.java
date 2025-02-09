@@ -105,10 +105,10 @@ public class MyTaxClient {
             ObjectNode serviceNode = servicesNode.addObject();
             serviceNode.put("name", service.name());
             serviceNode.put("quantity", service.quantity());
-            serviceNode.put("amount", new BigDecimal(serviceTotalAmount).setScale(2, RoundingMode.HALF_UP));
+            serviceNode.put("amount", BigDecimal.valueOf(serviceTotalAmount).setScale(2, RoundingMode.HALF_UP));
             totalAmount += serviceTotalAmount;
         }
-        payload.put("totalAmount", new BigDecimal(totalAmount).setScale(2, RoundingMode.HALF_UP));
+        payload.put("totalAmount", BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_PATH + "/income"))
