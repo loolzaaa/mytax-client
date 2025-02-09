@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.loolzaaa.nalog.mytax.client.dto.AuthenticationDTO;
 import ru.loolzaaa.nalog.mytax.client.dto.RefreshTokenDTO;
+import ru.loolzaaa.nalog.mytax.client.exception.ApiException;
 import ru.loolzaaa.nalog.mytax.client.exception.ApiRequestException;
 import ru.loolzaaa.nalog.mytax.client.pojo.Receipt;
 import ru.loolzaaa.nalog.mytax.client.pojo.Service;
@@ -122,19 +123,19 @@ public class MyTaxClient {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             int statusCode = response.statusCode();
-            if (statusCode != 200) {
-                throw new IllegalArgumentException("Response status: " + statusCode);
-            }
             String body = response.body();
+            if (statusCode != 200) {
+                throw new ApiRequestException("add income error", statusCode, body);
+            }
             String approvedReceiptUuid = MAPPER.readTree(body).path("approvedReceiptUuid").asText();
             final String jsonUrl = String.format("%s/receipt/%s/%s/json", API_PATH, inn, approvedReceiptUuid);
             final String printUrl = String.format("%s/receipt/%s/%s/print", API_PATH, inn, approvedReceiptUuid);
             return new Receipt(approvedReceiptUuid, jsonUrl, printUrl);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         } finally {
             refreshTokenLock.readLock().unlock();
         }
@@ -162,10 +163,10 @@ public class MyTaxClient {
             }
             return MAPPER.readValue(body, AuthenticationDTO.class);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         }
     }
 
@@ -184,16 +185,16 @@ public class MyTaxClient {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             int statusCode = response.statusCode();
-            if (statusCode != 200) {
-                throw new IllegalArgumentException("Response status: " + statusCode);
-            }
             String body = response.body();
+            if (statusCode != 200) {
+                throw new ApiRequestException("refresh token error", statusCode, body);
+            }
             return MAPPER.readValue(body, RefreshTokenDTO.class);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
+            throw new ApiException(e.getMessage());
         }
     }
 
