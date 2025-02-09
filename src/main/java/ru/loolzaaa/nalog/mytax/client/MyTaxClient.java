@@ -36,6 +36,8 @@ public class MyTaxClient {
 
     private static final Logger log = LoggerFactory.getLogger(MyTaxClient.class);
 
+    private static final String REFERER_HEADER = "Referer";
+
     private static final String API_PATH = "https://lknpd.nalog.ru/api/v1";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -112,7 +114,7 @@ public class MyTaxClient {
                 .uri(URI.create(API_PATH + "/income"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header("Referer", "https://lknpd.nalog.ru/sales/create")
+                .header(REFERER_HEADER, "https://lknpd.nalog.ru/sales/create")
                 .header("Authorization", "Bearer " + token)
                 .build();
 
@@ -148,7 +150,7 @@ public class MyTaxClient {
                 .uri(URI.create(API_PATH + "/auth/lkfl"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header("Referer", "https://lknpd.nalog.ru/auth/login")
+                .header(REFERER_HEADER, "https://lknpd.nalog.ru/auth/login")
                 .build();
 
         try {
@@ -176,7 +178,7 @@ public class MyTaxClient {
                 .uri(URI.create(API_PATH + "/auth/token"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header("Referer", "https://lknpd.nalog.ru/sales")
+                .header(REFERER_HEADER, "https://lknpd.nalog.ru/sales")
                 .build();
 
         try {
