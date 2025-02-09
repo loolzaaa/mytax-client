@@ -4,6 +4,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * Класс передачи данных аутентификации пользователя.
+ * <p>
+ * Содержит данные об основном токене, токене
+ * обновления основного токена, времени их экспирации,
+ * а также различные данные о пользователе.
+ * <p>
+ * Получается во время аутентификации пользователя,
+ * для внутреннего использования.
+ */
+
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -14,6 +25,15 @@ public class AuthenticationDTO {
     private String token;
     private String tokenExpireIn;
     private Profile profile;
+
+    /**
+     * Класс, содержащий различные данные о пользователе.
+     * <p>
+     * Наполнение класса может изменяться, не все поля
+     * могут быть инициализированы при получении.
+     * <p>
+     * Может быть получен после инициализации клиента.
+     */
 
     @Getter
     @Setter

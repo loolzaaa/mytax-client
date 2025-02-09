@@ -33,13 +33,13 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.IntStream;
 
+/**
+ * Основной класс клиента для обращения к API
+ */
+
 public class MyTaxClient {
 
     private static final Logger log = LoggerFactory.getLogger(MyTaxClient.class);
-
-    private static final String REFERER_HEADER = "Referer";
-
-    private static final String API_PATH = "https://lknpd.nalog.ru/api/v1";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -50,6 +50,8 @@ public class MyTaxClient {
 
     private final ReadWriteLock refreshTokenLock = new ReentrantReadWriteLock(true);
 
+    private final MyTaxClientConfig clientConfig;
+
     @Getter
     private final String deviceId;
 
@@ -59,13 +61,37 @@ public class MyTaxClient {
 
     private String inn;
 
+    /**
+     * Создание клиента с конфигурацией по умолчанию.
+     */
+
     public MyTaxClient() {
-        this("");
+        this(new MyTaxClientConfig());
     }
 
-    public MyTaxClient(String prefix) {
-        this.deviceId = generateDeviceId(prefix);
+    /**
+     * Создание клиента с пользовательской конфигурацией.
+     *
+     * @param clientConfig пользовательская конфигурация
+     *                     клиента
+     */
+
+    public MyTaxClient(MyTaxClientConfig clientConfig) {
+        this.clientConfig = clientConfig;
+        this.deviceId = generateDeviceId(this.clientConfig.getPrefix());
     }
+
+    /**
+     * Инициализация клиента.
+     * <p>
+     * В процессе инициализации происходит первичное получение
+     * токена авторизации путем аутентификации через
+     * имя пользователя и пароль.
+     *
+     * @param username имя пользователя
+     * @param password пароль
+     * @return данные о профиле пользователя
+     */
 
     public AuthenticationDTO.Profile init(String username, String password) {
         AuthenticationDTO authenticate = authenticate(username, password);
@@ -73,20 +99,41 @@ public class MyTaxClient {
         this.token = authenticate.getToken();
         this.tokenExpireIn = authenticate.getTokenExpireIn();
         this.inn = authenticate.getProfile().getInn();
-        log.info("User {} successfully authenticated in {}", this.inn, API_PATH);
+        log.info("User {} successfully authenticated in {}", this.inn, clientConfig.getApiPath());
         return authenticate.getProfile();
     }
+
+    /**
+     * Асинхронная отправка чека.
+     * <p>
+     * Неблокирующий метод, возвращает Future с квитанцией/
+     *
+     * @param services перечень оказанных услуг
+     * @return Future-объект с результатов запроса
+     * @see #addIncome(List)
+     */
 
     public CompletableFuture<Receipt> addIncomeAsync(List<Service> services) {
         return CompletableFuture.supplyAsync(() -> addIncome(services));
     }
+
+    /**
+     * Отправка чека.
+     * <p>
+     * Метод блокирующий.
+     * Перед отправкой проверяется
+     * экспирация основного токена.
+     *
+     * @param services перечень оказанных услуг
+     * @return квитанция с данными
+     */
 
     public Receipt addIncome(List<Service> services) {
         checkToken();
 
         String operationTime = OffsetDateTime.now()
                 .truncatedTo(ChronoUnit.SECONDS)
-                .withOffsetSameInstant(ZoneOffset.of("+5"))
+                .withOffsetSameInstant(ZoneOffset.of(clientConfig.getZoneOffset()))
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         ObjectNode payload = MAPPER.createObjectNode();
         payload.put("paymentType", "CASH");
@@ -112,10 +159,10 @@ public class MyTaxClient {
         payload.put("totalAmount", BigDecimal.valueOf(totalAmount).setScale(2, RoundingMode.HALF_UP));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_PATH + "/income"))
+                .uri(URI.create(clientConfig.getApiPath() + "/income"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header(REFERER_HEADER, "https://lknpd.nalog.ru/sales/create")
+                .header(clientConfig.getRefererHeader(), "https://lknpd.nalog.ru/sales/create")
                 .header("Authorization", "Bearer " + token)
                 .build();
 
@@ -128,8 +175,8 @@ public class MyTaxClient {
                 throw new ApiRequestException("add income error", statusCode, body);
             }
             String approvedReceiptUuid = MAPPER.readTree(body).path("approvedReceiptUuid").asText();
-            final String jsonUrl = String.format("%s/receipt/%s/%s/json", API_PATH, inn, approvedReceiptUuid);
-            final String printUrl = String.format("%s/receipt/%s/%s/print", API_PATH, inn, approvedReceiptUuid);
+            final String jsonUrl = String.format("%s/receipt/%s/%s/json", clientConfig.getApiPath(), inn, approvedReceiptUuid);
+            final String printUrl = String.format("%s/receipt/%s/%s/print", clientConfig.getApiPath(), inn, approvedReceiptUuid);
             return new Receipt(approvedReceiptUuid, jsonUrl, printUrl);
         } catch (IOException e) {
             throw new ApiException(e.getMessage());
@@ -148,10 +195,10 @@ public class MyTaxClient {
         payload.set("deviceInfo", getDeviceInfo(deviceId));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_PATH + "/auth/lkfl"))
+                .uri(URI.create(clientConfig.getApiPath() + "/auth/lkfl"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header(REFERER_HEADER, "https://lknpd.nalog.ru/auth/login")
+                .header(clientConfig.getRefererHeader(), "https://lknpd.nalog.ru/auth/login")
                 .build();
 
         try {
@@ -176,10 +223,10 @@ public class MyTaxClient {
         payload.put("refreshToken", refreshToken);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(API_PATH + "/auth/token"))
+                .uri(URI.create(clientConfig.getApiPath() + "/auth/token"))
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .headers(getCommonHeaders())
-                .header(REFERER_HEADER, "https://lknpd.nalog.ru/sales")
+                .header(clientConfig.getRefererHeader(), "https://lknpd.nalog.ru/sales")
                 .build();
 
         try {
