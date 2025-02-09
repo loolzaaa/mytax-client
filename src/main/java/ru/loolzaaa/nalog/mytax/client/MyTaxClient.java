@@ -20,6 +20,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -217,10 +218,11 @@ public class MyTaxClient {
     }
 
     private String generateDeviceId(String prefix) {
+        SecureRandom random = new SecureRandom();
         final String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         StringBuilder deviceInfoBuilder = new StringBuilder(prefix);
         IntStream.range(0, 21 - prefix.length()).forEach(v -> {
-            int index = (int) (Math.random() * chars.length());
+            int index = random.nextInt(chars.length());
             deviceInfoBuilder.append(chars.charAt(index));
         });
         return deviceInfoBuilder.toString();
